@@ -1,6 +1,6 @@
 /*! Falun 2027 – AI-guiden Flingan (chattwidget från Smartsvar), v1.0
     Läggs in på sajten med en rad:
-    <script src="https://chatlabsextension.github.io/falun2027-chat/falun2027-widget.js" data-project="VOICEFLOW_PROJEKT_ID" defer></script>
+    <script src="https://chatlabsextension.github.io/WM/falun2027-widget.js" data-project="VOICEFLOW_PROJEKT_ID" defer></script>
     data-version="development" kör testversionen i Voiceflow, utan attributet körs den publicerade (production).
 
     Widgeten lägger sig nere till höger: en chattknapp, en popup efter ett par sekunder och själva chatten när man klickar.
@@ -73,7 +73,7 @@
   :host{all:initial}
   *,*::before,*::after{box-sizing:border-box}
   .w{--navy:#0A2C6A;--blue:#1A5FD4;--ice:#63C3F5;--ink:#112240;--muted:#5E6B84;--line:#DFE7F1;--chip:#E9F2FC;--chip2:#D7E8FA;--paper:#F1F6FC;--orange:#F6921E;
-    --fd:'Barlow Condensed','Arial Narrow',Impact,sans-serif;--fb:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--ease:cubic-bezier(.2,.8,.2,1);--sb:env(safe-area-inset-bottom,0px);
+    --fd:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--fb:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--ease:cubic-bezier(.2,.8,.2,1);--sb:env(safe-area-inset-bottom,0px);
     font-family:var(--fb);font-size:15px;line-height:1.55;color:var(--ink);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
   button,textarea{font:inherit;color:inherit;margin:0}
   button{cursor:pointer;background:none;border:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -86,8 +86,9 @@
     opacity:0;visibility:hidden;transform:translateY(14px) scale(.98);transform-origin:100% 100%;transition:opacity .22s,transform .32s var(--ease),visibility 0s .32s}
   .w.open .panel{opacity:1;visibility:visible;transform:none;transition:opacity .22s,transform .32s var(--ease),height .5s var(--ease)}
   .w.has .msgs{justify-content:flex-start}
-  .w[data-m=mobile] .panel{right:0;left:0;bottom:0;width:auto;height:calc(100dvh - 14px)!important;max-height:none;border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .38s var(--ease),visibility 0s .38s}
+  .w[data-m=mobile] .panel{right:0;left:0;bottom:0;width:auto;height:auto!important;max-height:calc(100dvh - 14px);border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .38s var(--ease),visibility 0s .38s}
   .w[data-m=mobile].open .panel{transform:none;transition:transform .42s var(--ease)}
+  .w[data-m=mobile].has .panel{height:calc(100dvh - 14px)!important}
   .scrim{display:none}
   .w[data-m=mobile] .scrim{display:block;position:fixed;inset:0;z-index:3;background:rgba(10,12,14,.38);opacity:0;pointer-events:none;transition:opacity .3s}
   .w[data-m=mobile].open .scrim{opacity:1;pointer-events:auto}
@@ -106,10 +107,10 @@
   .bigw>div{min-height:0;overflow:hidden}
   .big{padding:0 24px 38px;transition:opacity .3s ease,transform .45s var(--ease)}
   .w.has .big{opacity:0;transform:translateY(-10px);pointer-events:none}
-  .hl{margin:0;font-family:var(--fd);font-weight:700;font-size:36px;line-height:.98;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;max-width:320px}
+  .hl{margin:0;font-family:var(--fd);font-weight:700;font-size:27px;line-height:1.08;letter-spacing:-.005em;text-transform:uppercase;text-wrap:balance;max-width:320px}
   .hl em{font-style:normal;color:#9ED8F8}
   .cd{display:inline-flex;align-items:center;gap:9px;margin-top:16px;padding:5px 12px 5px 6px;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);font-size:12.5px;font-weight:600;color:#fff}
-  .cd b{display:grid;place-items:center;min-width:28px;height:26px;padding:0 8px;border-radius:999px;background:var(--orange);color:#1A1200;font-family:var(--fd);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cd b{display:grid;place-items:center;min-width:28px;height:26px;padding:0 8px;border-radius:999px;background:var(--orange);color:#1A1200;font-family:var(--fd);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 
   .body{position:relative;z-index:1;flex:1;min-height:0;display:flex;flex-direction:column;margin-top:-22px;border-radius:24px 24px 0 0;background:linear-gradient(180deg,#FFFFFF 0%,#F4F8FD 100%)}
   .scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--line) transparent;border-radius:24px 24px 0 0;
@@ -252,7 +253,7 @@
   function loadFonts() {
     if (document.querySelector('link[data-f27-font]')) return;
     var l = document.createElement('link'); l.rel = 'stylesheet'; l.setAttribute('data-f27-font', '1');
-    l.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap';
+    l.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap';
     document.head.appendChild(l);
   }
   // "Tänker" på besökarens språk, gissat ur senaste meddelandet.
