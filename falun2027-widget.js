@@ -63,8 +63,8 @@
   var SUGGEST = chipsFor(NOW);
   var PHASE = NOW < VM_START ? 'before' : NOW <= VM_SLUT ? 'during' : 'after';
   /* ---------- Språk ----------
-     Flaggorna i headern byter språk på allt fast i chatten: rubrik, hälsning, knappar och fält. Flingan svarar ändå alltid
-     på det språk besökaren skriver på. Startspråket tas från sidans lang-attribut (till exempel engelska på /en/), annars svenska. */
+     Flaggorna i headern är bara en bild, de går inte att klicka på. Flingan svarar alltid på det språk besökaren skriver på.
+     Chattens fasta texter följer sidans lang-attribut (till exempel engelska på /en/), annars svenska. */
   var F = {
     sv: '<rect width="32" height="32" fill="#006AA7"/><path d="M9 0h5v32H9zM0 13.5h32v5H0z" fill="#FECC00"/>',
     no: '<rect width="32" height="32" fill="#BA0C2F"/><path d="M8 0h8v32H8zM0 12h32v8H0z" fill="#fff"/><path d="M10 0h4v32h-4zM0 14h32v4H0z" fill="#00205B"/>',
@@ -107,8 +107,6 @@
       chips: { 'Hur köper jag biljetter? 🎟️': 'Comment acheter des billets ? 🎟️', 'Hur ser programmet ut? 📅': 'Quel est le programme ? 📅', 'Ge bort VM i julklapp 💙': 'Offrir les Mondiaux à Noël 💙', 'Vad får jag ta med in?': 'Que puis-je apporter ?', 'Hur tar jag mig dit? 🚌': "Comment s'y rendre ? 🚌", 'Dagens program 📅': 'Programme du jour 📅', 'Hitta hit 🚌': 'Venir ici 🚌', 'Biljetter i dag 🎟️': 'Billets du jour 🎟️' } }
   };
   function pickLang() {
-    var st = null; try { st = sessionStorage.getItem('f27:lang'); } catch (e) {}
-    if (st && L[st]) return st;
     var h = String(document.documentElement.lang || '').toLowerCase().slice(0, 2);
     if (h === 'nb' || h === 'nn') h = 'no';
     return L[h] ? h : 'sv';
@@ -122,9 +120,9 @@
     if (PHASE === 'before') { var n = dayDiff(NOW, VM_START); cd = '<span class="cd"><b>' + n + '</b>' + T('cd')(n) + '</span>'; }
     else if (PHASE === 'during') { var dd = T('day')(dayDiff(VM_START, NOW) + 1, dayDiff(VM_START, VM_SLUT) + 1); cd = '<span class="cd"><b>' + dd[0] + '</b>' + dd[1] + '</span>'; }
     return '<h2 class="hl">' + (PHASE === 'before' ? T('hl') : T('hl2')) + '</h2>' +
-      '<div class="sal"><span class="salt">Speaks all languages</span><div class="flags" role="group" aria-label="Språk / Language">' +
-      LANGS.map(function (k) { return '<button type="button" data-l="' + k + '" class="' + (k === UL ? 'on' : '') + '" aria-pressed="' + (k === UL) + '" title="' + NAMES[k] + '" aria-label="' + NAMES[k] + '">' + flag(k) + '</button>'; }).join('') +
-      '<button type="button" class="more" title="+" aria-label="' + esc(T('any')) + '">+</button></div></div>' + cd;
+      '<div class="sal"><span class="salt">Speaks all languages</span><div class="flags" aria-hidden="true">' +
+      LANGS.map(function (k) { return '<span class="fl" title="' + NAMES[k] + '">' + flag(k) + '</span>'; }).join('') +
+      '<span class="more">+95</span></div></div>' + cd;
   }
 
   var CSS = `
@@ -139,14 +137,12 @@
   textarea:focus-visible{outline:none}
   svg,img{display:block}[hidden]{display:none!important}
 
-  .panel{position:fixed;z-index:3;right:24px;bottom:98px;width:min(440px,calc(100vw - 32px));height:auto;max-height:calc(100vh - 124px);display:flex;flex-direction:column;overflow:hidden;border-radius:28px;
+  .panel{position:fixed;z-index:3;right:24px;bottom:98px;width:min(440px,calc(100vw - 32px));height:min(700px,calc(100vh - 124px));max-height:calc(100vh - 124px);display:flex;flex-direction:column;overflow:hidden;border-radius:28px;
     background:linear-gradient(180deg,#FFFFFF 0%,#F4F8FD 100%);box-shadow:0 0 0 1px rgba(10,44,106,.07),0 2px 4px rgba(10,44,106,.04),0 40px 90px -36px rgba(10,44,106,.55);
     opacity:0;visibility:hidden;transform:translateY(14px) scale(.98);transform-origin:100% 100%;transition:opacity .22s,transform .32s var(--ease),visibility 0s .32s}
-  .w.open .panel{opacity:1;visibility:visible;transform:none;transition:opacity .22s,transform .32s var(--ease),height .5s var(--ease)}
-  .w.has .msgs{justify-content:flex-start}
-  .w[data-m=mobile] .panel{right:0;left:0;bottom:var(--kb,0px);width:auto;height:auto!important;max-height:calc(var(--vvh,100dvh) - 14px);border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .38s var(--ease),visibility 0s .38s}
+  .w.open .panel{opacity:1;visibility:visible;transform:none;transition:opacity .22s,transform .32s var(--ease)}
+  .w[data-m=mobile] .panel{right:0;left:0;bottom:var(--kb,0px);width:auto;height:calc(var(--vvh,100dvh) - 14px);max-height:none;border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .38s var(--ease),visibility 0s .38s}
   .w[data-m=mobile].open .panel{transform:none;transition:transform .42s var(--ease)}
-  .w[data-m=mobile].has .panel{height:calc(var(--vvh,100dvh) - 14px)!important}
   .scrim{display:none}
   .w[data-m=mobile] .scrim{display:block;position:fixed;inset:0;z-index:3;background:rgba(10,12,14,.38);opacity:0;pointer-events:none;transition:opacity .3s}
   .w[data-m=mobile].open .scrim{opacity:1;pointer-events:auto}
@@ -173,18 +169,15 @@
   .sal{margin-top:16px}
   .salt{display:block;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9ED8F8}
   .flags{display:flex;align-items:center;gap:7px;margin-top:9px}
-  .flags button{width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,.85);transition:transform .2s var(--ease),box-shadow .2s}
-  .flags button svg{width:100%;height:100%}
-  .flags button:hover{transform:translateY(-2px)}
-  .flags button.on{box-shadow:0 0 0 2px #fff,0 0 0 4.5px var(--ice)}
-  .flags .more{display:grid;place-items:center;background:rgba(255,255,255,.14);color:#fff;font-size:17px;font-weight:500;line-height:1;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
-  .flags .more:hover{background:rgba(255,255,255,.24)}
+  .flags .fl{display:block;width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+  .flags .fl svg{width:100%;height:100%}
+  .flags .more{display:grid;place-items:center;height:30px;padding:0 10px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:700;letter-spacing:.01em;line-height:1;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
   .w[data-m=mobile] .hl{font-size:27px}
   .w[data-m=mobile] .big{padding:0 22px 40px}
   .body{position:relative;z-index:1;flex:1;min-height:0;display:flex;flex-direction:column;margin-top:-22px;border-radius:24px 24px 0 0;background:linear-gradient(180deg,#FFFFFF 0%,#F4F8FD 100%)}
   .scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--line) transparent;border-radius:24px 24px 0 0;
     -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 18px,#000 calc(100% - 12px),transparent);mask-image:linear-gradient(180deg,transparent 0,#000 18px,#000 calc(100% - 12px),transparent)}
-  .msgs{display:flex;flex-direction:column;justify-content:flex-end;gap:14px;min-height:100%;padding:28px 22px 16px}
+  .msgs{display:flex;flex-direction:column;justify-content:flex-start;gap:14px;min-height:100%;padding:28px 22px 16px}
   .day{align-self:center;font-size:11.5px;color:var(--muted);padding:4px 0 2px;animation:fade .3s both}
   .hero{display:flex;flex-direction:column;align-items:flex-start;animation:rise .5s var(--ease) .1s both}
   .op{font-size:15px;line-height:1.6;color:var(--ink)}
@@ -555,10 +548,10 @@
 
     var q = function (s) { return root.querySelector(s); };
     var w = q('.w'), msgs = q('.msgs'), scroll = q('.scroll'), ta = q('textarea'), sendB = q('.send'), launch = q('.launch'), teaser = q('.teaser'), panel = q('.panel');
-    var busy = false, isOpen = false, lang = UL, timers = [], epoch = 0, log = [], H = 700; // H = chattfönstrets höjd när samtalet har börjat
+    var busy = false, isOpen = false, lang = UL, timers = [], epoch = 0, log = [];
     function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
     function pin() { scroll.scrollTop = scroll.scrollHeight; }
-    function measure() { w.dataset.m = innerWidth <= 600 ? 'mobile' : 'desktop'; panel.style.height = w.classList.contains('has') ? Math.min(H, innerHeight - 124) + 'px' : ''; vv(); }
+    function measure() { w.dataset.m = innerWidth <= 600 ? 'mobile' : 'desktop'; vv(); }
     // Mobil: chatten följer den synliga delen av skärmen, så att fältet aldrig hamnar under tangentbordet.
     function vv() {
       var v = window.visualViewport;
@@ -585,21 +578,10 @@
     }
     function greet() { var h = el('div', 'hero', '<div class="op">' + md(T('opening')) + '</div>'); if (SUGGEST.length) h.appendChild(chips(SUGGEST.map(tr))); msgs.appendChild(h); }
     function teaserChips() { var box = teaser.querySelector('.chips'); box.innerHTML = ''; SUGGEST.slice(0, 1).map(tr).forEach(function (t) { var b = el('button'); b.type = 'button'; b.textContent = t; b.onclick = function (e) { e.stopPropagation(); send(t); }; box.appendChild(b); }); }
-    // Byter språk på allt fast i chatten. Går bara innan samtalet har börjat (sedan är headern hopfälld).
-    function setLang(k) {
-      if (!L[k] || busy) return;
-      UL = k; lang = k; store(K + 'lang', k);
-      q('.big').innerHTML = headHtml(); ta.placeholder = T('ph'); q('.foot').innerHTML = footHtml();
-      teaser.querySelector('p').textContent = T('teaser'); q('.lt1').textContent = T('l1'); q('.lt2').textContent = T('l2'); q('.lx').setAttribute('aria-label', T('hide'));
-      teaserChips();
-      if (!w.classList.contains('has')) { msgs.innerHTML = ''; greet(); }
-      var b = q('.flags [data-l="' + k + '"]'); if (b) b.focus({ preventScroll: true });
-    }
     function stamp() { var t = new Date(); return 'Idag ' + ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2); }
     function begin() { // Hälsningskortet blir ett chattfönster: höjden växer en gång till H och ligger sedan still.
       if (w.classList.contains('has')) return;
       msgs.appendChild(el('div', 'day', stamp()));
-      panel.style.height = panel.offsetHeight + 'px'; void panel.offsetHeight; // välkomstkortet växer en gång till full höjd
       w.classList.add('has'); measure();
     }
     function addMe(text) { var me = el('div', 'me'); me.textContent = text; msgs.appendChild(me); return me; }
@@ -702,7 +684,7 @@
     function reset() {
       epoch++; timers.forEach(clearTimeout); timers = []; busy = false; lang = UL; log = [];
       store(K + 'log', null); store(K + 'u', null); store(K + 'on', null); launchP = null; // nytt samtal = nytt besökar-id hos Voiceflow
-      msgs.innerHTML = ''; w.classList.remove('has'); panel.style.height = ''; greet(); sync();
+      msgs.innerHTML = ''; w.classList.remove('has'); greet(); sync();
       if (isOpen) warm();
     }
     function warm() { if (VF.projectID) launched().catch(NOOP); }
@@ -727,10 +709,6 @@
     q('.tx-x').onclick = function (e) { e.stopPropagation(); hideTeaser(true); };
     // Popupen visar bara den första knappen.
     teaserChips();
-    q('.big').addEventListener('click', function (e) {
-      var f = e.target.closest('[data-l]'); if (f) { setLang(f.getAttribute('data-l')); return; }
-      if (e.target.closest('.more')) { ta.placeholder = T('any'); ta.focus(); }
-    });
     // Mobil: krysset på chattknappen gör den till en liten flik vid kanten, som fortfarande öppnar chatten.
     q('.lx').onclick = function (e) { e.stopPropagation(); w.classList.add('mini'); hideTeaser(true); store(K + 'mini', '1'); };
     if (store(K + 'mini')) w.classList.add('mini');
