@@ -307,19 +307,32 @@
     return (t.match(/\*\*/g) || []).length % 2 ? t + '**' : t;
   }
   // De sista orden tonas in, så att texten får en mjuk framkant medan den skrivs.
-  function softTail(root) {
-    var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n, last = null;
-    while ((n = tw.nextNode())) if (/\S/.test(n.nodeValue)) last = n;
-    if (!last) return;
-    var parts = last.nodeValue.split(/(\s+)/), frag = document.createDocumentFragment(), words = parts.filter(function (p) { return /\S/.test(p); }).length, seen = 0, O = [.9, .75, .58, .4, .22];
-    parts.forEach(function (p) {
-      if (!p) return;
-      if (!/\S/.test(p)) { frag.appendChild(document.createTextNode(p)); return; }
-      var fromEnd = words - (++seen);
-      if (fromEnd >= O.length) { frag.appendChild(document.createTextNode(p)); return; }
-      var sp = document.createElement('span'); sp.textContent = p; sp.style.opacity = O[O.length - 1 - fromEnd]; frag.appendChild(sp);
-    });
-    last.parentNode.replaceChild(frag, last);
+  function softTail(root, span) {
+    var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n, nodes = [];
+    while ((n = tw.nextNode())) nodes.push(n);
+    var left = span;
+    for (var i = nodes.length - 1; i >= 0 && left > 0; i--) {
+      var node = nodes[i], v = node.nodeValue, cut = Math.max(0, v.length - left), frag = document.createDocumentFragment();
+      if (cut) frag.appendChild(document.createTextNode(v.slice(0, cut)));
+      for (var j = cut; j < v.length; j++) {
+        var d = (span - left) + (v.length - j); // avstånd från textens slut, i tecken
+        var sp = document.createElement('span'); sp.textContent = v[j];
+        sp.style.opacity = (.1 + .9 * Math.min(1, d / span)).toFixed(2);
+        frag.appendChild(sp);
+      }
+      left -= v.length - cut;
+      node.parentNode.replaceChild(frag, node);
+    }
+  }
+  // Var nästa steg i texten ska landa. Länkar, adresser och markdown-tecken hoppas över i ett svep, så de aldrig syns till hälften.
+  function stepTo(t, pos) {
+    var r = t.slice(pos), m;
+    if ((m = /^\]\([^)\s]*\)/.exec(r))) return pos + m[0].length;
+    if (r.slice(0, 2) === '**') return pos + 2;
+    var atStart = pos === 0 || /[\s(\[]/.test(t[pos - 1]);
+    if (atStart && (m = /^(?:https?:\/\/\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.[a-z]{2,}|(?:[a-z0-9-]+\.)+(?:com|se|no|fi|de|org|net)(?:\/\S*)?)/i.exec(r))) return pos + m[0].length;
+    if (atStart && (m = /^(?:[-*•]|\d+[.)])[ \t]+/.exec(r))) return pos + m[0].length;
+    return pos + 1;
   }
   function loadFonts() {
     if (document.querySelector('link[data-f27-font]')) return;
@@ -596,33 +609,58 @@
       var tx = row.querySelector('.tx'), my = epoch, base = '', cur = '', pos = 0, started = false, typing = false, ended = false, btns = null, fin = null, rp = {};
       function full() { return base + cur; }
       function ok() { return my === epoch; }
+      var shown = 0, rate = 0, last = 0, raf = 0, waitT = 0, follow = true;
       function paint(final) {
         var t = full();
         if (final || pos >= t.length) { tx.innerHTML = md(t); return; }
-        tx.innerHTML = md(tidy(t.slice(0, pos))); softTail(tx);
+        tx.innerHTML = md(tidy(t.slice(0, pos))); softTail(tx, 30);
       }
-      function tick() {
+      // Följer med nedåt mjukt, men slutar när svarets början når toppen, så att man läser från början.
+      function glide(force) {
+        if (!follow) return;
+        var max = scroll.scrollHeight - scroll.clientHeight, top = row.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop - 14;
+        var target = Math.max(scroll.scrollTop, Math.min(max, top));
+        var d = target - scroll.scrollTop;
+        if (force || Math.abs(d) < 1) scroll.scrollTop = target; else scroll.scrollTop += d * .18;
+      }
+      function frame(now) {
+        raf = 0;
         if (!ok()) return;
-        var t = full();
-        if (pos > t.length) pos = t.length;
-        if (pos < t.length) {
-          var n = t.length - pos > 600 ? 4 : t.length - pos > 250 ? 2 : 1; // ligger texten långt före skrivs det fortare
-          while (n-- && pos < t.length) { var m = /^\s*\S+/.exec(t.slice(pos)); pos += m ? m[0].length : t.length - pos; }
-          paint(false); pin();
-          later(tick, 34); return;
+        var t = full(), dt = Math.min(64, now - (last || now)); last = now;
+        if (pos > t.length) pos = shown = t.length;
+        var back = t.length - shown;
+        if (back > 0) {
+          // Grundtakt ca 45 tecken per sekund. Ligger texten långt före ökar takten mjukt, aldrig ryckigt.
+          var want = Math.max(45, Math.min(170, back / (ended ? 1.6 : 2.6)));
+          rate += (want - rate) * Math.min(1, dt / 260);
+          shown = Math.min(t.length, shown + rate * dt / 1000);
+          var before = pos;
+          while (pos < Math.floor(shown)) pos = stepTo(t, pos);
+          if (pos > shown) shown = pos;
+          if (pos !== before) paint(false);
+          glide();
+          raf = requestAnimationFrame(frame); return;
         }
-        typing = false;
+        // Ikapp: tona in de sista tecknen helt och vänta på mer text.
+        paint(true); glide(true);
+        typing = false; last = 0;
         if (ended) done();
       }
+      function tick() { if (!raf) raf = requestAnimationFrame(frame); }
       function kick() {
         if (!ok() || typing || !full()) return;
-        typing = true;
-        if (reduce) { pos = full().length; paint(true); pin(); typing = false; if (ended) done(); return; }
-        if (started) { tick(); return; }
-        started = true;
-        var th = tx.querySelector('.think'); if (th) th.classList.add('gone');
-        later(tick, 240);
+        if (reduce) { pos = shown = full().length; paint(true); pin(); if (ended) done(); return; }
+        if (!started) {
+          // Vänta in en liten buffert först, så att texten inte stannar direkt efter första ordet.
+          if (full().length < 40 && !ended) { if (!waitT) waitT = later(function () { waitT = -1; kick(); }, 380); if (waitT !== -1) return; }
+          started = true; typing = true; rate = 45;
+          var th = tx.querySelector('.think'); if (th) th.classList.add('gone');
+          later(tick, 220); return;
+        }
+        typing = true; tick();
       }
+      scroll.addEventListener('wheel', function () { follow = false; }, { passive: true, once: true });
+      scroll.addEventListener('touchmove', function () { follow = false; }, { passive: true, once: true });
       function done() {
         if (!ok() || !fin) return;
         var f = fin; fin = null; paint(true);
@@ -630,7 +668,7 @@
       }
       rp.open = NOOP;
       rp.delta = function (t) { cur += t; kick(); };
-      rp.redo = function (t) { cur = t; if (pos > full().length) pos = full().length; if (typing || started) paint(false); kick(); };
+      rp.redo = function (t) { cur = t; if (pos > full().length) pos = shown = full().length; if (typing || started) paint(false); kick(); };
       rp.close = function () { if (cur) { base = full() + '\n\n'; cur = ''; } };
       rp.text = function (t) { rp.close(); cur = t; rp.close(); kick(); };
       rp.btns = function (items) { btns = (btns || []).concat(items); };
@@ -643,7 +681,8 @@
       };
       rp.fail = function (retry, nocfg) {
         if (!ok()) return;
-        if (full()) { pos = full().length; paint(true); row = el('div', 'bot', '<div class="tx"></div>'); msgs.appendChild(row); tx = row.querySelector('.tx'); }
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        if (full()) { pos = shown = full().length; paint(true); row = el('div', 'bot', '<div class="tx"></div>'); msgs.appendChild(row); tx = row.querySelector('.tx'); }
         tx.innerHTML = md(nocfg ? 'Chatten är inte kopplad till Voiceflow ännu. Lägg till data-project="…" på skriptraden.' : T('err'));
         if (!nocfg) { var box = el('div', 'chips'), b = el('button'); b.type = 'button'; b.textContent = T('retry'); b.onclick = retry; box.appendChild(b); msgs.appendChild(box); }
         pin();
