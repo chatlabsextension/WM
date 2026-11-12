@@ -24,7 +24,7 @@
     opening: 'Hej! Vad har du på hjärtat?\n\nJag är Flingan, jag kan hjälpa dig med svar om det mesta som rör VM i Falun. Fråga mig på ditt språk. 💙',
     teaser: 'Hej! Undrar du något inför Skid-VM? Jag svarar direkt, dygnet runt.',
     teaserDelay: 1800,
-    thinking: { sv: 'Tänker', en: 'Thinking', no: 'Tenker', de: 'Denke nach', fi: 'Mietin' },
+    thinking: { sv: 'Tänker', en: 'Thinking', no: 'Tenker', de: 'Denke nach', fi: 'Mietin', fr: 'Je réfléchis' },
     errorText: 'Jag fick inget svar just nu. Försök igen om en stund, eller mejla info@falun2027.com.',
     retryText: 'Försök igen'
   };
@@ -62,11 +62,69 @@
   }
   var SUGGEST = chipsFor(NOW);
   var PHASE = NOW < VM_START ? 'before' : NOW <= VM_SLUT ? 'during' : 'after';
+  /* ---------- Språk ----------
+     Flaggorna i headern byter språk på allt fast i chatten: rubrik, hälsning, knappar och fält. Flingan svarar ändå alltid
+     på det språk besökaren skriver på. Startspråket tas från sidans lang-attribut (till exempel engelska på /en/), annars svenska. */
+  var F = {
+    sv: '<rect width="32" height="32" fill="#006AA7"/><path d="M9 0h5v32H9zM0 13.5h32v5H0z" fill="#FECC00"/>',
+    no: '<rect width="32" height="32" fill="#BA0C2F"/><path d="M8 0h8v32H8zM0 12h32v8H0z" fill="#fff"/><path d="M10 0h4v32h-4zM0 14h32v4H0z" fill="#00205B"/>',
+    fi: '<rect width="32" height="32" fill="#fff"/><path d="M9 0h6v32H9zM0 13h32v6H0z" fill="#002F6C"/>',
+    de: '<rect width="32" height="11" fill="#000"/><rect y="10.7" width="32" height="10.7" fill="#DD0000"/><rect y="21.3" width="32" height="10.7" fill="#FFCE00"/>',
+    en: '<rect width="32" height="32" fill="#012169"/><path d="M0 0l32 32M32 0L0 32" stroke="#fff" stroke-width="6"/><path d="M0 0l32 32M32 0L0 32" stroke="#C8102E" stroke-width="2"/><path d="M16 0v32M0 16h32" stroke="#fff" stroke-width="10"/><path d="M16 0v32M0 16h32" stroke="#C8102E" stroke-width="6"/>',
+    fr: '<rect width="11" height="32" fill="#0055A4"/><rect x="10.7" width="10.7" height="32" fill="#fff"/><rect x="21.3" width="10.7" height="32" fill="#EF4135"/>'
+  };
+  var LANGS = ['sv', 'no', 'fi', 'de', 'en', 'fr'];
+  var NAMES = { sv: 'Svenska', no: 'Norsk', fi: 'Suomi', de: 'Deutsch', en: 'English', fr: 'Français' };
+  var L = {
+    sv: { hl: 'Vad undrar du inför <em>VM</em>?', hl2: 'Vad undrar du om <em>VM</em>?', cd: function (n) { return n === 1 ? 'dag kvar till invigningen' : 'dagar kvar till invigningen'; }, day: function (d, t) { return ['Dag ' + d, 'av ' + t + ' · Skid-VM pågår']; },
+      opening: 'Hej! Vad har du på hjärtat?\n\nJag är Flingan, jag kan hjälpa dig med svar om det mesta som rör VM i Falun. Fråga mig på ditt språk. 💙',
+      ph: 'Skriv din fråga…', any: 'Skriv på valfritt språk…', foot: 'Flingan är en AI-guide och kan ha fel', by: 'Drivs av', teaser: 'Hej! Undrar du något inför Skid-VM? Jag svarar direkt, dygnet runt.',
+      l1: 'Fråga Flingan', l2: 'Svar direkt, dygnet runt', err: 'Jag fick inget svar just nu. Försök igen om en stund, eller mejla info@falun2027.com.', retry: 'Försök igen', hide: 'Göm chattknappen', chips: {} },
+    en: { hl: 'Questions about the <em>Worlds</em>?', hl2: 'Questions about the <em>Worlds</em>?', cd: function (n) { return n === 1 ? 'day to the opening' : 'days to the opening'; }, day: function (d, t) { return ['Day ' + d, 'of ' + t + ' · The Worlds are on']; },
+      opening: "Hi! What's on your mind?\n\nI'm Flingan, and I can help you with most things about the World Championships in Falun. Ask me in your language. 💙",
+      ph: 'Type your question…', any: 'Write in any language…', foot: 'Flingan is an AI guide and can make mistakes', by: 'Powered by', teaser: 'Hi! Questions about the Worlds? I answer right away, around the clock.',
+      l1: 'Ask Flingan', l2: 'Instant answers, 24/7', err: "I didn't get an answer just now. Try again in a moment, or email info@falun2027.com.", retry: 'Try again', hide: 'Hide chat button',
+      chips: { 'Hur köper jag biljetter? 🎟️': 'How do I buy tickets? 🎟️', 'Hur ser programmet ut? 📅': "What's the schedule? 📅", 'Ge bort VM i julklapp 💙': 'Give the Worlds as a Christmas gift 💙', 'Vad får jag ta med in?': 'What can I bring in?', 'Hur tar jag mig dit? 🚌': 'How do I get there? 🚌', 'Dagens program 📅': "Today's schedule 📅", 'Hitta hit 🚌': 'Getting here 🚌', 'Biljetter i dag 🎟️': 'Tickets for today 🎟️' } },
+    no: { hl: 'Hva lurer du på før <em>VM</em>?', hl2: 'Hva lurer du på om <em>VM</em>?', cd: function (n) { return n === 1 ? 'dag til åpningen' : 'dager til åpningen'; }, day: function (d, t) { return ['Dag ' + d, 'av ' + t + ' · VM pågår']; },
+      opening: 'Hei! Hva har du på hjertet?\n\nJeg er Flingan, og jeg kan hjelpe deg med svar på det meste om VM i Falun. Spør meg på ditt språk. 💙',
+      ph: 'Skriv spørsmålet ditt…', any: 'Skriv på hvilket språk du vil…', foot: 'Flingan er en AI-guide og kan ta feil', by: 'Drevet av', teaser: 'Hei! Lurer du på noe om VM? Jeg svarer med en gang, døgnet rundt.',
+      l1: 'Spør Flingan', l2: 'Svar med en gang, døgnet rundt', err: 'Jeg fikk ikke noe svar akkurat nå. Prøv igjen om litt, eller send e-post til info@falun2027.com.', retry: 'Prøv igjen', hide: 'Skjul chatknappen',
+      chips: { 'Hur köper jag biljetter? 🎟️': 'Hvordan kjøper jeg billetter? 🎟️', 'Hur ser programmet ut? 📅': 'Hvordan ser programmet ut? 📅', 'Ge bort VM i julklapp 💙': 'Gi bort VM i julegave 💙', 'Vad får jag ta med in?': 'Hva kan jeg ta med inn?', 'Hur tar jag mig dit? 🚌': 'Hvordan kommer jeg meg dit? 🚌', 'Dagens program 📅': 'Dagens program 📅', 'Hitta hit 🚌': 'Finn fram 🚌', 'Biljetter i dag 🎟️': 'Billetter i dag 🎟️' } },
+    fi: { hl: 'Kysyttävää <em>MM-kisoista</em>?', hl2: 'Kysyttävää <em>MM-kisoista</em>?', cd: function () { return 'päivää avajaisiin'; }, day: function (d, t) { return ['Päivä ' + d, '/ ' + t + ' · MM-kisat käynnissä']; },
+      opening: 'Hei! Mitä mielessäsi?\n\nOlen Flingan, ja autan sinua lähes kaikessa, mikä liittyy Falunin MM-kisoihin. Kysy minulta omalla kielelläsi. 💙',
+      ph: 'Kirjoita kysymyksesi…', any: 'Kirjoita millä kielellä tahansa…', foot: 'Flingan on tekoälyopas ja voi erehtyä', by: 'Palvelun tarjoaa', teaser: 'Hei! Kysyttävää MM-kisoista? Vastaan heti, ympäri vuorokauden.',
+      l1: 'Kysy Flinganilta', l2: 'Vastaus heti, 24/7', err: 'En saanut vastausta juuri nyt. Yritä hetken päästä uudelleen tai lähetä sähköpostia osoitteeseen info@falun2027.com.', retry: 'Yritä uudelleen', hide: 'Piilota chat-painike',
+      chips: { 'Hur köper jag biljetter? 🎟️': 'Miten ostan liput? 🎟️', 'Hur ser programmet ut? 📅': 'Millainen ohjelma on? 📅', 'Ge bort VM i julklapp 💙': 'Anna MM-kisat joululahjaksi 💙', 'Vad får jag ta med in?': 'Mitä saan ottaa mukaan?', 'Hur tar jag mig dit? 🚌': 'Miten pääsen perille? 🚌', 'Dagens program 📅': 'Päivän ohjelma 📅', 'Hitta hit 🚌': 'Löydä perille 🚌', 'Biljetter i dag 🎟️': 'Liput tänään 🎟️' } },
+    de: { hl: 'Fragen zur <em>WM</em>?', hl2: 'Fragen zur <em>WM</em>?', cd: function (n) { return n === 1 ? 'Tag bis zur Eröffnung' : 'Tage bis zur Eröffnung'; }, day: function (d, t) { return ['Tag ' + d, 'von ' + t + ' · Die WM läuft']; },
+      opening: 'Hallo! Was liegt dir auf dem Herzen?\n\nIch bin Flingan und helfe dir bei fast allem rund um die WM in Falun. Frag mich in deiner Sprache. 💙',
+      ph: 'Schreib deine Frage…', any: 'Schreib in deiner Sprache…', foot: 'Flingan ist ein KI-Guide und kann sich irren', by: 'Betrieben von', teaser: 'Hallo! Fragen zur WM? Ich antworte sofort, rund um die Uhr.',
+      l1: 'Frag Flingan', l2: 'Sofort Antwort, rund um die Uhr', err: 'Ich habe gerade keine Antwort bekommen. Versuch es gleich noch einmal oder schreib an info@falun2027.com.', retry: 'Erneut versuchen', hide: 'Chat-Button ausblenden',
+      chips: { 'Hur köper jag biljetter? 🎟️': 'Wie kaufe ich Tickets? 🎟️', 'Hur ser programmet ut? 📅': 'Wie sieht das Programm aus? 📅', 'Ge bort VM i julklapp 💙': 'Die WM zu Weihnachten verschenken 💙', 'Vad får jag ta med in?': 'Was darf ich mitnehmen?', 'Hur tar jag mig dit? 🚌': 'Wie komme ich hin? 🚌', 'Dagens program 📅': 'Programm heute 📅', 'Hitta hit 🚌': 'Anreise 🚌', 'Biljetter i dag 🎟️': 'Tickets für heute 🎟️' } },
+    fr: { hl: 'Des questions sur les <em>Mondiaux</em> ?', hl2: 'Des questions sur les <em>Mondiaux</em> ?', cd: function (n) { return n === 1 ? "jour avant l'ouverture" : "jours avant l'ouverture"; }, day: function (d, t) { return ['Jour ' + d, 'sur ' + t + ' · Mondiaux en cours']; },
+      opening: "Bonjour ! Qu'avez-vous sur le cœur ?\n\nJe suis Flingan, je peux vous aider pour presque tout ce qui concerne les Mondiaux de Falun. Posez-moi vos questions dans votre langue. 💙",
+      ph: 'Écrivez votre question…', any: 'Écrivez dans la langue de votre choix…', foot: 'Flingan est un guide IA et peut se tromper', by: 'Propulsé par', teaser: 'Bonjour ! Une question sur les Mondiaux ? Je réponds tout de suite, 24 h/24.',
+      l1: 'Demandez à Flingan', l2: 'Réponse immédiate, 24 h/24', err: "Je n'ai pas reçu de réponse pour le moment. Réessayez dans un instant ou écrivez à info@falun2027.com.", retry: 'Réessayer', hide: 'Masquer le bouton de chat',
+      chips: { 'Hur köper jag biljetter? 🎟️': 'Comment acheter des billets ? 🎟️', 'Hur ser programmet ut? 📅': 'Quel est le programme ? 📅', 'Ge bort VM i julklapp 💙': 'Offrir les Mondiaux à Noël 💙', 'Vad får jag ta med in?': 'Que puis-je apporter ?', 'Hur tar jag mig dit? 🚌': "Comment s'y rendre ? 🚌", 'Dagens program 📅': 'Programme du jour 📅', 'Hitta hit 🚌': 'Venir ici 🚌', 'Biljetter i dag 🎟️': 'Billets du jour 🎟️' } }
+  };
+  function pickLang() {
+    var st = null; try { st = sessionStorage.getItem('f27:lang'); } catch (e) {}
+    if (st && L[st]) return st;
+    var h = String(document.documentElement.lang || '').toLowerCase().slice(0, 2);
+    if (h === 'nb' || h === 'nn') h = 'no';
+    return L[h] ? h : 'sv';
+  }
+  var UL = pickLang();
+  function T(k) { var v = L[UL][k]; return v == null ? L.sv[k] : v; }
+  function tr(s) { return (L[UL].chips && L[UL].chips[s]) || s; }
+  function flag(k) { return '<svg viewBox="0 0 32 32" aria-hidden="true">' + F[k] + '</svg>'; }
   function headHtml() {
-    var hl = PHASE === 'before' ? 'Vad undrar du inför <em>VM</em>?' : 'Vad undrar du om <em>VM</em>?', cd = '';
-    if (PHASE === 'before') { var n = dayDiff(NOW, VM_START); cd = '<span class="cd"><b>' + n + '</b>' + (n === 1 ? 'dag' : 'dagar') + ' kvar till invigningen</span>'; }
-    else if (PHASE === 'during') cd = '<span class="cd"><b>Dag ' + (dayDiff(VM_START, NOW) + 1) + '</b>av ' + (dayDiff(VM_START, VM_SLUT) + 1) + ' · Skid-VM pågår</span>';
-    return '<h2 class="hl">' + hl + '</h2>' + cd;
+    var cd = '';
+    if (PHASE === 'before') { var n = dayDiff(NOW, VM_START); cd = '<span class="cd"><b>' + n + '</b>' + T('cd')(n) + '</span>'; }
+    else if (PHASE === 'during') { var dd = T('day')(dayDiff(VM_START, NOW) + 1, dayDiff(VM_START, VM_SLUT) + 1); cd = '<span class="cd"><b>' + dd[0] + '</b>' + dd[1] + '</span>'; }
+    return '<h2 class="hl">' + (PHASE === 'before' ? T('hl') : T('hl2')) + '</h2>' +
+      '<div class="sal"><span class="salt">Speaks all languages</span><div class="flags" role="group" aria-label="Språk / Language">' +
+      LANGS.map(function (k) { return '<button type="button" data-l="' + k + '" class="' + (k === UL ? 'on' : '') + '" aria-pressed="' + (k === UL) + '" title="' + NAMES[k] + '" aria-label="' + NAMES[k] + '">' + flag(k) + '</button>'; }).join('') +
+      '<button type="button" class="more" title="+" aria-label="' + esc(T('any')) + '">+</button></div></div>' + cd;
   }
 
   var CSS = `
@@ -81,14 +139,14 @@
   textarea:focus-visible{outline:none}
   svg,img{display:block}[hidden]{display:none!important}
 
-  .panel{position:fixed;z-index:3;right:24px;bottom:98px;width:min(400px,calc(100vw - 32px));height:auto;max-height:calc(100vh - 124px);display:flex;flex-direction:column;overflow:hidden;border-radius:28px;
+  .panel{position:fixed;z-index:3;right:24px;bottom:98px;width:min(440px,calc(100vw - 32px));height:auto;max-height:calc(100vh - 124px);display:flex;flex-direction:column;overflow:hidden;border-radius:28px;
     background:linear-gradient(180deg,#FFFFFF 0%,#F4F8FD 100%);box-shadow:0 0 0 1px rgba(10,44,106,.07),0 2px 4px rgba(10,44,106,.04),0 40px 90px -36px rgba(10,44,106,.55);
     opacity:0;visibility:hidden;transform:translateY(14px) scale(.98);transform-origin:100% 100%;transition:opacity .22s,transform .32s var(--ease),visibility 0s .32s}
   .w.open .panel{opacity:1;visibility:visible;transform:none;transition:opacity .22s,transform .32s var(--ease),height .5s var(--ease)}
   .w.has .msgs{justify-content:flex-start}
-  .w[data-m=mobile] .panel{right:0;left:0;bottom:0;width:auto;height:auto!important;max-height:calc(100dvh - 14px);border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .38s var(--ease),visibility 0s .38s}
+  .w[data-m=mobile] .panel{right:0;left:0;bottom:var(--kb,0px);width:auto;height:auto!important;max-height:calc(var(--vvh,100dvh) - 14px);border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .38s var(--ease),visibility 0s .38s}
   .w[data-m=mobile].open .panel{transform:none;transition:transform .42s var(--ease)}
-  .w[data-m=mobile].has .panel{height:calc(100dvh - 14px)!important}
+  .w[data-m=mobile].has .panel{height:calc(var(--vvh,100dvh) - 14px)!important}
   .scrim{display:none}
   .w[data-m=mobile] .scrim{display:block;position:fixed;inset:0;z-index:3;background:rgba(10,12,14,.38);opacity:0;pointer-events:none;transition:opacity .3s}
   .w[data-m=mobile].open .scrim{opacity:1;pointer-events:auto}
@@ -105,13 +163,24 @@
   .bigw{display:grid;grid-template-rows:1fr;transition:grid-template-rows .55s var(--ease)}
   .w.has .bigw{grid-template-rows:0fr}
   .bigw>div{min-height:0;overflow:hidden}
-  .big{padding:0 24px 38px;transition:opacity .3s ease,transform .45s var(--ease)}
+  .big{padding:4px 26px 42px;transition:opacity .3s ease,transform .45s var(--ease)}
   .w.has .big{opacity:0;transform:translateY(-10px);pointer-events:none}
-  .hl{margin:0;font-family:var(--fd);font-weight:700;font-size:27px;line-height:1.08;letter-spacing:-.005em;text-transform:uppercase;text-wrap:balance;max-width:320px}
+  .hl{margin:0;font-family:var(--fd);font-weight:700;font-size:30px;line-height:1.08;letter-spacing:-.005em;text-transform:uppercase;text-wrap:balance;max-width:320px}
   .hl em{font-style:normal;color:#9ED8F8}
-  .cd{display:inline-flex;align-items:center;gap:9px;margin-top:16px;padding:5px 12px 5px 6px;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);font-size:12.5px;font-weight:600;color:#fff}
+  .cd{display:inline-flex;align-items:center;gap:9px;margin-top:18px;padding:5px 12px 5px 6px;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);font-size:12.5px;font-weight:600;color:#fff}
   .cd b{display:grid;place-items:center;min-width:28px;height:26px;padding:0 8px;border-radius:999px;background:var(--orange);color:#1A1200;font-family:var(--fd);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 
+  .sal{margin-top:16px}
+  .salt{display:block;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9ED8F8}
+  .flags{display:flex;align-items:center;gap:7px;margin-top:9px}
+  .flags button{width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,.85);transition:transform .2s var(--ease),box-shadow .2s}
+  .flags button svg{width:100%;height:100%}
+  .flags button:hover{transform:translateY(-2px)}
+  .flags button.on{box-shadow:0 0 0 2px #fff,0 0 0 4.5px var(--ice)}
+  .flags .more{display:grid;place-items:center;background:rgba(255,255,255,.14);color:#fff;font-size:17px;font-weight:500;line-height:1;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
+  .flags .more:hover{background:rgba(255,255,255,.24)}
+  .w[data-m=mobile] .hl{font-size:27px}
+  .w[data-m=mobile] .big{padding:0 22px 40px}
   .body{position:relative;z-index:1;flex:1;min-height:0;display:flex;flex-direction:column;margin-top:-22px;border-radius:24px 24px 0 0;background:linear-gradient(180deg,#FFFFFF 0%,#F4F8FD 100%)}
   .scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--line) transparent;border-radius:24px 24px 0 0;
     -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 18px,#000 calc(100% - 12px),transparent);mask-image:linear-gradient(180deg,transparent 0,#000 18px,#000 calc(100% - 12px),transparent)}
@@ -182,6 +251,15 @@
   .teaser .chips{margin-top:12px;flex-direction:column;align-items:flex-start;gap:7px;animation:none}
   .teaser .chips:empty{display:none}
   .teaser .chips button{min-height:34px;padding:7px 14px;font-size:13.5px}
+  .lx{display:none}
+  .w[data-m=mobile] .lx{display:grid;place-items:center;position:fixed;z-index:3;right:58px;bottom:calc(58px + var(--sb));width:24px;height:24px;border-radius:50%;background:#fff;color:var(--ink);
+    box-shadow:0 0 0 1px rgba(10,44,106,.14),0 4px 10px -4px rgba(10,44,106,.55);animation:pop .4s var(--ease) .6s both}
+  .w[data-m=mobile] .lx::before{content:'';position:absolute;inset:-6px}
+  .w.open .lx,.w.mini .lx{display:none!important}
+  .w[data-m=mobile].mini .launch{right:0;bottom:calc(18px + var(--sb));width:50px;height:46px;padding:0 0 0 6px;justify-content:flex-start;border-radius:999px 0 0 999px;opacity:.94;animation:none}
+  .w[data-m=mobile].mini .launch .li{width:34px;height:34px}
+  .w[data-m=mobile].mini .launch .li img{width:23px;height:23px}
+  .w[data-m=mobile].mini .teaser{display:none}
   .tx-x{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
   .tx-x:hover{background:rgba(17,34,64,.06);color:var(--ink)}
 
@@ -264,6 +342,7 @@
     if (/[åä]/.test(t) && !has(['missä', 'miten', 'onko']) || has(['hur', 'vad', 'och', 'jag', 'inte', 'biljett', 'biljetter', 'när', 'var', 'kan', 'finns', 'hej'])) return 'sv';
     if (/[üß]/.test(t) || has(['wie', 'ich', 'und', 'nicht', 'gibt', 'wo', 'wann', 'karten', 'hallo'])) return 'de';
     if (has(['missä', 'miten', 'onko', 'mitä', 'kiitos', 'liput', 'hei'])) return 'fi';
+    if (/[àâçèêëîïôœù]/.test(t) || has(['comment', 'quoi', 'je', 'les', 'billets', 'bonjour', 'où', 'quand'])) return 'fr';
     if (has(['the', 'what', 'when', 'where', 'how', 'is', 'are', 'do', 'can', 'tickets', 'ticket', 'hello', 'hi', 'i'])) return 'en';
     return prev;
   }
@@ -446,6 +525,8 @@
     return launched().then(function () { return exchange(action, rp); });
   }
 
+  function footHtml() { return esc(T('foot')) + '<span class="dot">·</span>' + esc(T('by')) + ' <a href="https://smartsvar.se" target="_blank" rel="noopener">Smartsvar</a>'; }
+
   /* ---------- Chatten ---------- */
   function mount() {
     loadFonts();
@@ -461,22 +542,31 @@
           '<button class="ib x" type="button" aria-label="Minimera" title="Minimera">' + svg(UI.down, 21) + '</button></div>' +
           '<div class="bigw"><div><div class="big">' + headHtml() + '</div></div></div></header>' +
         '<div class="body"><div class="scroll"><div class="msgs" role="log" aria-live="polite"></div></div>' +
-        '<form class="composer"><div class="field"><textarea rows="1" enterkeyhint="send" aria-label="Skriv din fråga" placeholder="Skriv din fråga…"></textarea>' +
+        '<form class="composer"><div class="field"><textarea rows="1" enterkeyhint="send" aria-label="Skriv din fråga" placeholder="' + esc(T('ph')) + '"></textarea>' +
         '<button class="send" type="submit" aria-label="Skicka" disabled>' + svg(UI.send, 18) + '</button></div>' +
-        '<div class="foot">' + esc(C.name) + ' är en AI-guide och kan ha fel<span class="dot">·</span>Drivs av <a href="https://smartsvar.se" target="_blank" rel="noopener">Smartsvar</a></div></form></div>' +
+        '<div class="foot">' + footHtml() + '</div></form></div>' +
       '</section>' +
       '<div class="teaser" role="button" tabindex="0" hidden><button class="tx-x" type="button" aria-label="Stäng">' + svg(UI.x, 14) + '</button>' +
-        '<div class="tn"><img src="' + MARK + '" alt=""><span><b>' + esc(C.name) + '</b> · Digital guide, Falun 2027</span></div><p>' + esc(C.teaser) + '</p><div class="chips"></div></div>' +
+        '<div class="tn"><img src="' + MARK + '" alt=""><span><b>' + esc(C.name) + '</b> · Digital guide, Falun 2027</span></div><p>' + esc(T('teaser')) + '</p><div class="chips"></div></div>' +
       '<button class="launch" type="button" aria-expanded="false" aria-label="Chatta med ' + esc(C.name) + '"><span class="li"><img src="' + MARK + '" alt=""></span>' +
-        '<span class="lt"><span>Fråga ' + esc(C.name) + '</span><span class="lt2">Svar direkt, dygnet runt</span></span></button>' +
+        '<span class="lt"><span class="lt1">' + esc(T('l1')) + '</span><span class="lt2">' + esc(T('l2')) + '</span></span></button>' +
+      '<button class="lx" type="button" aria-label="' + esc(T('hide')) + '">' + svg(UI.x, 12) + '</button>' +
       '</div>';
 
     var q = function (s) { return root.querySelector(s); };
     var w = q('.w'), msgs = q('.msgs'), scroll = q('.scroll'), ta = q('textarea'), sendB = q('.send'), launch = q('.launch'), teaser = q('.teaser'), panel = q('.panel');
-    var busy = false, isOpen = false, lang = 'sv', timers = [], epoch = 0, log = [], H = 600; // H = chattfönstrets höjd när samtalet har börjat
+    var busy = false, isOpen = false, lang = UL, timers = [], epoch = 0, log = [], H = 700; // H = chattfönstrets höjd när samtalet har börjat
     function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
     function pin() { scroll.scrollTop = scroll.scrollHeight; }
-    function measure() { w.dataset.m = innerWidth <= 600 ? 'mobile' : 'desktop'; if (w.classList.contains('has')) panel.style.height = Math.min(H, innerHeight - 124) + 'px'; }
+    function measure() { w.dataset.m = innerWidth <= 600 ? 'mobile' : 'desktop'; panel.style.height = w.classList.contains('has') ? Math.min(H, innerHeight - 124) + 'px' : ''; vv(); }
+    // Mobil: chatten följer den synliga delen av skärmen, så att fältet aldrig hamnar under tangentbordet.
+    function vv() {
+      var v = window.visualViewport;
+      if (!v || w.dataset.m !== 'mobile') { w.style.removeProperty('--vvh'); w.style.removeProperty('--kb'); return; }
+      w.style.setProperty('--vvh', Math.round(v.height) + 'px');
+      w.style.setProperty('--kb', Math.max(0, Math.round(innerHeight - v.height - v.offsetTop)) + 'px');
+    }
+    if (window.visualViewport) { visualViewport.addEventListener('resize', vv); visualViewport.addEventListener('scroll', vv); }
     measure(); addEventListener('resize', measure);
     function save() { store(K + 'log', JSON.stringify(log.slice(-60))); }
 
@@ -493,12 +583,23 @@
       });
       return box;
     }
-    function greet() { var h = el('div', 'hero', '<div class="op">' + md(C.opening) + '</div>'); if (SUGGEST.length) h.appendChild(chips(SUGGEST)); msgs.appendChild(h); }
+    function greet() { var h = el('div', 'hero', '<div class="op">' + md(T('opening')) + '</div>'); if (SUGGEST.length) h.appendChild(chips(SUGGEST.map(tr))); msgs.appendChild(h); }
+    function teaserChips() { var box = teaser.querySelector('.chips'); box.innerHTML = ''; SUGGEST.slice(0, 1).map(tr).forEach(function (t) { var b = el('button'); b.type = 'button'; b.textContent = t; b.onclick = function (e) { e.stopPropagation(); send(t); }; box.appendChild(b); }); }
+    // Byter språk på allt fast i chatten. Går bara innan samtalet har börjat (sedan är headern hopfälld).
+    function setLang(k) {
+      if (!L[k] || busy) return;
+      UL = k; lang = k; store(K + 'lang', k);
+      q('.big').innerHTML = headHtml(); ta.placeholder = T('ph'); q('.foot').innerHTML = footHtml();
+      teaser.querySelector('p').textContent = T('teaser'); q('.lt1').textContent = T('l1'); q('.lt2').textContent = T('l2'); q('.lx').setAttribute('aria-label', T('hide'));
+      teaserChips();
+      if (!w.classList.contains('has')) { msgs.innerHTML = ''; greet(); }
+      var b = q('.flags [data-l="' + k + '"]'); if (b) b.focus({ preventScroll: true });
+    }
     function stamp() { var t = new Date(); return 'Idag ' + ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2); }
     function begin() { // Hälsningskortet blir ett chattfönster: höjden växer en gång till H och ligger sedan still.
       if (w.classList.contains('has')) return;
       msgs.appendChild(el('div', 'day', stamp()));
-      panel.style.height = panel.offsetHeight + 'px'; void panel.offsetHeight;
+      panel.style.height = panel.offsetHeight + 'px'; void panel.offsetHeight; // välkomstkortet växer en gång till full höjd
       w.classList.add('has'); measure();
     }
     function addMe(text) { var me = el('div', 'me'); me.textContent = text; msgs.appendChild(me); return me; }
@@ -561,8 +662,8 @@
       rp.fail = function (retry, nocfg) {
         if (!ok()) return;
         if (full()) { pos = full().length; paint(true); row = el('div', 'bot', '<div class="tx"></div>'); msgs.appendChild(row); tx = row.querySelector('.tx'); }
-        tx.innerHTML = md(nocfg ? 'Chatten är inte kopplad till Voiceflow ännu. Lägg till data-project="…" på skriptraden.' : C.errorText);
-        if (!nocfg) { var box = el('div', 'chips'), b = el('button'); b.type = 'button'; b.textContent = C.retryText; b.onclick = retry; box.appendChild(b); msgs.appendChild(box); }
+        tx.innerHTML = md(nocfg ? 'Chatten är inte kopplad till Voiceflow ännu. Lägg till data-project="…" på skriptraden.' : T('err'));
+        if (!nocfg) { var box = el('div', 'chips'), b = el('button'); b.type = 'button'; b.textContent = T('retry'); b.onclick = retry; box.appendChild(b); msgs.appendChild(box); }
         pin();
       };
       return rp;
@@ -599,7 +700,7 @@
       return true;
     }
     function reset() {
-      epoch++; timers.forEach(clearTimeout); timers = []; busy = false; lang = 'sv'; log = [];
+      epoch++; timers.forEach(clearTimeout); timers = []; busy = false; lang = UL; log = [];
       store(K + 'log', null); store(K + 'u', null); store(K + 'on', null); launchP = null; // nytt samtal = nytt besökar-id hos Voiceflow
       msgs.innerHTML = ''; w.classList.remove('has'); panel.style.height = ''; greet(); sync();
       if (isOpen) warm();
@@ -610,10 +711,12 @@
     function hideTeaser(forGood) { teaser.hidden = true; if (forGood) store(K + 't', '1'); }
     function open() {
       if (isOpen) return; isOpen = true; w.classList.add('open'); launch.setAttribute('aria-expanded', 'true'); hideTeaser(true); store(K + 'open', '1');
+      if (w.dataset.m === 'mobile') { lockPrev = document.documentElement.style.overflow; document.documentElement.style.overflow = 'hidden'; locked = true; }
       if (w.dataset.m !== 'mobile') later(function () { ta.focus({ preventScroll: true }); }, 150);
       later(pin, 60); warm();
     }
-    function close() { if (!isOpen) return; isOpen = false; w.classList.remove('open'); launch.setAttribute('aria-expanded', 'false'); ta.blur(); store(K + 'open', null); }
+    var locked = false, lockPrev = '';
+    function close() { if (!isOpen) return; isOpen = false; w.classList.remove('open'); launch.setAttribute('aria-expanded', 'false'); ta.blur(); store(K + 'open', null); if (locked) { document.documentElement.style.overflow = lockPrev; locked = false; } }
 
     launch.onclick = function () { isOpen ? close() : open(); };
     q('.x').onclick = close;
@@ -623,7 +726,14 @@
     teaser.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
     q('.tx-x').onclick = function (e) { e.stopPropagation(); hideTeaser(true); };
     // Popupen visar bara den första knappen.
-    SUGGEST.slice(0, 1).forEach(function (t) { var b = el('button'); b.type = 'button'; b.textContent = t; b.onclick = function (e) { e.stopPropagation(); send(t); }; teaser.querySelector('.chips').appendChild(b); });
+    teaserChips();
+    q('.big').addEventListener('click', function (e) {
+      var f = e.target.closest('[data-l]'); if (f) { setLang(f.getAttribute('data-l')); return; }
+      if (e.target.closest('.more')) { ta.placeholder = T('any'); ta.focus(); }
+    });
+    // Mobil: krysset på chattknappen gör den till en liten flik vid kanten, som fortfarande öppnar chatten.
+    q('.lx').onclick = function (e) { e.stopPropagation(); w.classList.add('mini'); hideTeaser(true); store(K + 'mini', '1'); };
+    if (store(K + 'mini')) w.classList.add('mini');
     ta.addEventListener('input', function () { grow(); sync(); });
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(ta.value); } });
     q('form').addEventListener('submit', function (e) { e.preventDefault(); send(ta.value); });
