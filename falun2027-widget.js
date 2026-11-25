@@ -1,6 +1,6 @@
 /*! Falun 2027 – AI-guiden Flingan (chattwidget från Smartsvar), v1.0
     Läggs in på sajten med en rad:
-    <script src="https://ADRESSEN-DÄR-FILEN-LIGGER/widget.js" defer></script>
+    <script src="https://flingan.pages.dev/falun2027-widget.js" defer></script>
     Flingans projekt-id i Voiceflow är inbyggt nedan. data-project="…" på skriptraden byter till ett annat projekt.
     data-version="development" kör testversionen i Voiceflow, utan attributet körs den publicerade (production).
 
@@ -16,7 +16,7 @@
 
   /* ---------- Inställningar ---------- */
   var script = document.currentScript, ds = (script && script.dataset) || {}, W = window.FLINGAN || {};
-  var VF = { projectID: W.projectID || ds.project || '69ca138b2c0d3a70b365bea0', versionID: W.versionID || ds.version || 'production' };
+  var VF = { projectID: W.projectID || ds.project || '69ca138b2c0d3a70b365be9f', versionID: W.versionID || ds.version || 'production' };
   if (/^BYT/i.test(VF.projectID)) VF.projectID = ''; // platshållaren på testsidan räknas som att id saknas
   var RUNTIME = 'https://general-runtime.voiceflow.com';
 
