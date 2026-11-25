@@ -118,7 +118,7 @@
   function flag(k) { return '<svg viewBox="0 0 32 32" aria-hidden="true">' + F[k] + '</svg>'; }
   function headHtml() {
     var cd = '';
-    if (PHASE === 'before') { var n = dayDiff(NOW, VM_START); cd = '<span class="cd"><b>' + n + '</b>' + T('cd')(n) + '</span>'; }
+    if (PHASE === 'before') { var n = Math.max(1, dayDiff(NOW, VM_START) - 1); cd = '<span class="cd"><b>' + n + '</b>' + T('cd')(n) + '</span>'; }
     else if (PHASE === 'during') { var dd = T('day')(dayDiff(VM_START, NOW) + 1, dayDiff(VM_START, VM_SLUT) + 1); cd = '<span class="cd"><b>' + dd[0] + '</b>' + dd[1] + '</span>'; }
     return '<h2 class="hl">' + (PHASE === 'before' ? T('hl') : T('hl2')) + '</h2>' +
       '<div class="sal"><span class="salt">Speaks all languages</span><div class="flags" aria-hidden="true">' +
