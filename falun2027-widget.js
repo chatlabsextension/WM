@@ -1,6 +1,7 @@
 /*! Falun 2027 – AI-guiden Flingan (chattwidget från Smartsvar), v1.0
     Läggs in på sajten med en rad:
-    <script src="https://chatlabsextension.github.io/WM/falun2027-widget.js" data-project="VOICEFLOW_PROJEKT_ID" defer></script>
+    <script src="https://ADRESSEN-DÄR-FILEN-LIGGER/widget.js" defer></script>
+    Flingans projekt-id i Voiceflow är inbyggt nedan. data-project="…" på skriptraden byter till ett annat projekt.
     data-version="development" kör testversionen i Voiceflow, utan attributet körs den publicerade (production).
 
     Widgeten lägger sig nere till höger: en chattknapp, en popup efter ett par sekunder och själva chatten när man klickar.
@@ -15,7 +16,7 @@
 
   /* ---------- Inställningar ---------- */
   var script = document.currentScript, ds = (script && script.dataset) || {}, W = window.FLINGAN || {};
-  var VF = { projectID: W.projectID || ds.project || '', versionID: W.versionID || ds.version || 'production' };
+  var VF = { projectID: W.projectID || ds.project || '69ca138b2c0d3a70b365bea0', versionID: W.versionID || ds.version || 'production' };
   if (/^BYT/i.test(VF.projectID)) VF.projectID = ''; // platshållaren på testsidan räknas som att id saknas
   var RUNTIME = 'https://general-runtime.voiceflow.com';
 
@@ -38,9 +39,9 @@
   var KNAPPSCHEMA = [
     // Sätt klar: true när fråga 138 om presentkort är besvarad.
     { fran: '2026-12-01', till: '2026-12-23', klar: false, knappar: ['Hur köper jag biljetter? 🎟️', 'Ge bort VM i julklapp 💙'] },
-    // Sätt klar: true när beskedet om shuttlebussen finns i kunskapsbasen.
+    // Sätt klar: true när ordningsreglerna är publicerade och Flingan svarar bra på alla tre knapparna.
     { fran: '2027-02-01', klar: false, knappar: ['Hur köper jag biljetter? 🎟️', 'Vad får jag ta med in?', 'Hur tar jag mig dit? 🚌'] },
-    // Sätt klar: true när shuttlebussen har besked och Flingan svarar rätt på "Dagens program".
+    // Sätt klar: true när Flingan svarar rätt på "Dagens program" (kräver att {vf_date} fungerar).
     { fran: VM_START, klar: false, knappar: ['Dagens program 📅', 'Hitta hit 🚌', 'Biljetter i dag 🎟️'] },
     // Efter VM: inga knappar.
     { fran: '2027-03-08', klar: true, knappar: [] }
